@@ -3,9 +3,10 @@ package com.ordenaris.riesgocrediticio.rule;
 import com.ordenaris.riesgocrediticio.dto.ContextoEvaluacion;
 import com.ordenaris.riesgocrediticio.dto.ResultadoRegla;
 import com.ordenaris.riesgocrediticio.enums.NivelRiesgo;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-
+@Component
 public class ReglaAltaSolicitudVsVentas implements ReglaEvaluacion {
 
     @Override

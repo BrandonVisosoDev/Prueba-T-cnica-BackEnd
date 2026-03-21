@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface DatosContablesRepository extends JpaRepository<DatosContables, Long> {
 
+    Optional<DatosContables> findByEmpresaId(String empresaId);
 }

@@ -3,7 +3,9 @@ package com.ordenaris.riesgocrediticio.rule;
 import com.ordenaris.riesgocrediticio.dto.ContextoEvaluacion;
 import com.ordenaris.riesgocrediticio.dto.ResultadoRegla;
 import com.ordenaris.riesgocrediticio.enums.NivelRiesgo;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ReglaDemandaLegalAbierta implements ReglaEvaluacion {
 
     @Override

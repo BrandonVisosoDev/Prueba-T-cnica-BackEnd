@@ -3,10 +3,11 @@ package com.ordenaris.riesgocrediticio.rule;
 import com.ordenaris.riesgocrediticio.dto.ContextoEvaluacion;
 import com.ordenaris.riesgocrediticio.dto.ResultadoRegla;
 import com.ordenaris.riesgocrediticio.enums.NivelRiesgo;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-
+@Component
 public class ReglaEmpresaNueva implements ReglaEvaluacion {
 
     @Override
