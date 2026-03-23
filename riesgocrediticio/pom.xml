@@ -95,6 +95,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.11.0</version>
 				<configuration>
+					<release>17</release> <!-- FIX: Le dice explícitamente a Maven que compile con Java 17 -->
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
