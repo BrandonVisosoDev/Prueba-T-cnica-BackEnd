@@ -1,17 +1,17 @@
 package com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence;
 
-import com.ordenaris.riesgocrediticio.domain.port.out.HistorialPagosProvider;
+import com.ordenaris.riesgocrediticio.domain.port.out.VerificacionLegalProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class HistorialPagosAdapter implements HistorialPagosProvider {
+public class VerificacionLegalAdapter implements VerificacionLegalProvider {
 
-    private final HistorialPagosRepository repository;
+    private final VerificacionLegalRepository repository;
 
     @Override
-    public HistorialPagos obtenerHistorialPagos(String empresaId) {
+    public VerificacionLegal obtenerVerificacionLegal(String empresaId) {
         return repository.findByEmpresaId(empresaId).orElse(null);
     }
 }

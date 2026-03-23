@@ -11,6 +11,7 @@ import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 @Service
 @RequiredArgsConstructor
 public class OrdenarisRiskService implements EvaluarRiesgoPort {
@@ -22,6 +23,7 @@ public class OrdenarisRiskService implements EvaluarRiesgoPort {
     private final VerificacionLegalProvider verificacionLegalProvider;
     private final EmpresaRepository empresaRepo;
     private final ResultadoEvaluacionRepository resultadoRepo;
+    private final OrdenarisRiskEngine motorReglas;
 
     @Override
     public ResultadoEvaluacion evaluar(SolicitudEvaluacion solicitud) {
