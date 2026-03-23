@@ -19,7 +19,7 @@ public class ReglaDemandaLegalAbierta implements ReglaEvaluacion {
             return new ResultadoRegla(
                     "Demanda Legal Abierta",
                     true,
-                    NivelRiesgo.RECHAZADO,
+                    NivelRiesgo.ALTO,
                     null,
                     "Alerta legal: La empresa tiene un juicio mercantil en curso."
             );

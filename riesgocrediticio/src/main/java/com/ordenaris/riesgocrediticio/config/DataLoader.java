@@ -1,92 +1,69 @@
-package com.ordenaris.riesgocrediticio.config;
-
-import com.ordenaris.riesgocrediticio.entity.*;
-import com.ordenaris.riesgocrediticio.repository.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+import com.ordenaris.riesgocrediticio.entity.DatosContables;
+import com.ordenaris.riesgocrediticio.entity.Empresa;
+import com.ordenaris.riesgocrediticio.entity.HistorialPagos;
+import com.ordenaris.riesgocrediticio.entity.VerificacionLegal;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Component
-@RequiredArgsConstructor
-public class DataLoader implements CommandLineRunner {
+@Override
+public void run(String... args) throws Exception {
 
-    private final EmpresaRepository empresaRepo;
-    private final DatosContablesRepository contablesRepo;
-    private final HistorialPagosRepository pagosRepo;
-    private final VerificacionLegalRepository legalRepo;
+    // ─── EMPRESA 001 — La buena (debe PASAR) ───────────────────────
+    Empresa empresa = new Empresa();
+    empresa.setId("EMPRESA001");
+    empresa.setNombre("Tech Solutions S.A. de C.V.");
+    empresa.setRfc("TSM123456ABC");
+    empresa.setFechaConstitucion(LocalDate.now().minusMonths(24)); // 24 meses → pasa Regla 3
+    empresaRepo.save(empresa);
 
-    @Override
-    public void run(String... args) throws Exception {
-        // 1. Creamos la Empresa base
-        Empresa empresa = new Empresa();
-        empresa.setId("EMPRESA001");
-        empresa.setNombre("Tech Solutions S.A. de C.V.");
-        empresa.setRfc("TSM123456ABC");
-        // Le damos 2 años de antigüedad para que pase la regla de 'Empresa Nueva'
-        empresa.setFechaConstitucion(LocalDate.now().minusMonths(24));
-        empresaRepo.save(empresa);
+    DatosContables contables = new DatosContables();
+    contables.setEmpresaId("EMPRESA001");
+    contables.setVentasPromedioMensuales(new BigDecimal("150000"));
+    contables.setActivos(new BigDecimal("2000000"));
+    contables.setPasivos(new BigDecimal("500000"));
+    contablesRepo.save(contables);
 
-        // 2. Le asignamos sus Datos Contables
-        DatosContables contables = new DatosContables();
-        contables.setEmpresa(empresa);
-        contables.setVentasPromedioMensuales(new BigDecimal("150000")); // Vende 150k al mes
-        contables.setActivosTotales(new BigDecimal("2000000"));
-        contables.setPasivosTotales(new BigDecimal("500000"));
-        contablesRepo.save(contables);
+    HistorialPagos pagos = new HistorialPagos();
+    pagos.setEmpresaId("EMPRESA001");
+    pagos.setDiasDeudaVencida(0);                  // sin deuda → pasa Regla 1
+    pagos.setPagosEnTiempoUltimos12Meses(true);    // baja nivel → Regla 5
+    pagos.setTieneRefinanciamiento(false);
+    pagosRepo.save(pagos);
 
-        // 3. Su Historial de Pagos (Cliente impecable para probar el premio)
-        HistorialPagos pagos = new HistorialPagos();
-        pagos.setEmpresa(empresa);
-        pagos.setDiasDeudaVencida(0);
-        pagos.setPagosEnTiempoUltimos12Meses(true);
-        pagos.setTieneRefinanciamiento(false);
-        pagosRepo.save(pagos);
+    VerificacionLegal legal = new VerificacionLegal();
+    legal.setEmpresaId("EMPRESA001");
+    legal.setJuicioMercantilEnCurso(false);        // sin juicio → pasa Regla 4
+    legalRepo.save(legal);
 
-        // 4. Verificación Legal (Limpio, sin juicios)
-        VerificacionLegal legal = new VerificacionLegal();
-        legal.setEmpresa(empresa);
-        legal.setJuicioMercantilEnCurso(false);
-        legalRepo.save(legal);
+    System.out.println(">> [OK] EMPRESA001 cargada — esperado: BAJO (historial excelente baja nivel)");
 
-        System.out.println(">> [SISTEMA] Datos de prueba (EMPRESA001) cargados exitosamente.");
+    // ─── EMPRESA 002 — La mala (debe FALLAR) ───────────────────────
+    Empresa empresaMala = new Empresa();
+    empresaMala.setId("EMPRESA002");
+    empresaMala.setNombre("Emprendimientos Riesgosos S.A.");
+    empresaMala.setRfc("BAD987654XYZ");
+    empresaMala.setFechaConstitucion(LocalDate.now().minusMonths(6)); // 6 meses → Regla 3 activa
+    empresaRepo.save(empresaMala);
 
-        // ---------------------------------------------------------
-        // 2. CREAMOS LA EMPRESA DE RIESGO (EMPRESA002)
-        // ---------------------------------------------------------
-        Empresa empresaMala = new Empresa();
-        empresaMala.setId("EMPRESA002");
-        empresaMala.setNombre("Emprendimientos Riesgosos S.A.");
-        empresaMala.setRfc("BAD987654XYZ");
-        // Regla 4: Empresa nueva (solo 6 meses de vida) -> Riesgo ALTO
-        empresaMala.setFechaConstitucion(LocalDate.now().minusMonths(6));
-        empresaRepo.save(empresaMala);
+    DatosContables contablesMalos = new DatosContables();
+    contablesMalos.setEmpresaId("EMPRESA002");
+    contablesMalos.setVentasPromedioMensuales(new BigDecimal("20000"));
+    contablesMalos.setActivos(new BigDecimal("50000"));
+    contablesMalos.setPasivos(new BigDecimal("100000"));
+    contablesRepo.save(contablesMalos);
 
-        // Datos Contables: Vende poquito (20k)
-        DatosContables contablesMalos = new DatosContables();
-        contablesMalos.setEmpresa(empresaMala);
-        contablesMalos.setVentasPromedioMensuales(new BigDecimal("20000"));
-        contablesMalos.setActivosTotales(new BigDecimal("50000"));
-        contablesMalos.setPasivosTotales(new BigDecimal("100000"));
-        contablesRepo.save(contablesMalos);
+    HistorialPagos pagosMalos = new HistorialPagos();
+    pagosMalos.setEmpresaId("EMPRESA002");
+    pagosMalos.setDiasDeudaVencida(45);            // < 90 días, no activa Regla 1
+    pagosMalos.setPagosEnTiempoUltimos12Meses(false);
+    pagosMalos.setTieneRefinanciamiento(true);
+    pagosRepo.save(pagosMalos);
 
-        // Historial de Pagos: Tiene deuda de 45 días -> Riesgo ALTO
-        HistorialPagos pagosMalos = new HistorialPagos();
-        pagosMalos.setEmpresa(empresaMala);
-        pagosMalos.setDiasDeudaVencida(45); // Regla 1 activa
-        pagosMalos.setPagosEnTiempoUltimos12Meses(false);
-        pagosMalos.setTieneRefinanciamiento(true);
-        pagosRepo.save(pagosMalos);
+    VerificacionLegal legalMalo = new VerificacionLegal();
+    legalMalo.setEmpresaId("EMPRESA002");
+    legalMalo.setJuicioMercantilEnCurso(true);     // juicio activo → RECHAZADO (Regla 4)
+    legalRepo.save(legalMalo);
 
-        // Legal: Tiene un juicio activo -> RECHAZO INMEDIATO
-        VerificacionLegal legalMalo = new VerificacionLegal();
-        legalMalo.setEmpresa(empresaMala);
-        legalMalo.setJuicioMercantilEnCurso(true); // Regla 3 activa
-        legalRepo.save(legalMalo);
-
-        System.out.println(">> [SISTEMA] Empresa 'Mala' (EMPRESA002) cargada. Lista para fallar.");
-
-    }
+    System.out.println(">> [OK] EMPRESA002 cargada — esperado: RECHAZADO (juicio mercantil)");
 }

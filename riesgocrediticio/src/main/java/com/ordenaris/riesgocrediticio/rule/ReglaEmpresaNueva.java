@@ -29,7 +29,7 @@ public class ReglaEmpresaNueva implements ReglaEvaluacion {
                 return new ResultadoRegla(
                         "Empresa Nueva",
                         true,
-                        NivelRiesgo.ALTO,
+                        NivelRiesgo.MEDIO,
                         null,
                         "Riesgo por madurez: La empresa tiene solo " + mesesDeOperacion + " meses de operación (menor a 18 meses)."
                 );

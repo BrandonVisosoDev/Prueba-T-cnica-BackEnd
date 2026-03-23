@@ -23,4 +23,7 @@ public class Empresa {
 
     private LocalDate fechaConstitucion; // Lo usaremos para saber si tiene menos de 18 meses
 
+    private String rfc;
+
+
 }

@@ -21,8 +21,8 @@ public class ReglaAltaSolicitudVsVentas implements ReglaEvaluacion {
             BigDecimal montoSolicitado = solicitud.getMontoSolicitado();
             BigDecimal ventasMensuales = datosContables.getVentasPromedioMensuales();
 
-            // Multiplicamos las ventas x 3 usando BigDecimal
-            BigDecimal limiteSano = ventasMensuales.multiply(new BigDecimal("3"));
+            // Multiplicamos las ventas x 8 usando BigDecimal
+            BigDecimal limiteSano = ventasMensuales.multiply(new BigDecimal("8"));
 
             // compareTo devuelve 1 si el monto solicitado es mayor al límite sano
             if (montoSolicitado.compareTo(limiteSano) > 0) {
@@ -31,7 +31,7 @@ public class ReglaAltaSolicitudVsVentas implements ReglaEvaluacion {
                         true,
                         NivelRiesgo.ALTO,
                         null,
-                        "El monto solicitado de $" + montoSolicitado + " supera 3 veces las ventas promedio ($" + ventasMensuales + ")."
+                        "El monto solicitado de $" + montoSolicitado + " supera 8 veces las ventas promedio ($" + ventasMensuales + ")."
                 );
             }
         }
