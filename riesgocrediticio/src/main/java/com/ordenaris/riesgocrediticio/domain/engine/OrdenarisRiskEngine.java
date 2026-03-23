@@ -1,11 +1,11 @@
 package com.ordenaris.riesgocrediticio.domain.engine;
 
-import com.ordenaris.riesgocrediticio.domain.model.ContextoEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.model.ResultadoRegla;
+import com.ordenaris.riesgocrediticio.domain.model.ContextoEvaluacion;
+import com.ordenaris.riesgocrediticio.domain.rule.ReglaEvaluacion;
+import com.ordenaris.riesgocrediticio.domain.model.enums.NivelRiesgo;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.DetalleReglaEvaluada;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.ResultadoEvaluacion;
-import com.ordenaris.riesgocrediticio.domain.model.enums.NivelRiesgo;
-import com.ordenaris.riesgocrediticio.domain.rule.ReglaEvaluacion;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -16,89 +16,80 @@ import java.util.List;
 @Component
 public class OrdenarisRiskEngine {
 
-    // Spring inyecta automáticamente todas las clases @Component que implementen ReglaEvaluacion
     private final List<ReglaEvaluacion> reglas;
 
     public OrdenarisRiskEngine(List<ReglaEvaluacion> reglas) {
         this.reglas = reglas;
     }
 
+    // ─── Método principal — Cognitive Complexity reducida ──────────────────────
     public ResultadoEvaluacion evaluarRiesgo(ContextoEvaluacion contexto) {
-        List<ResultadoRegla> resultadosParciales = new ArrayList<>();
-        int contadorAltos = 0;
-        int modificadorTotal = 0;
-        boolean rechazadoInmediato = false;
-        boolean nivelMinimoMedio = false;
-        String motivoPrincipal = "Evaluación completada con éxito. Cliente apto.";
-
-        // 1. Pasamos la empresa por todas las reglas
-        for (ReglaEvaluacion regla : reglas) {
-            ResultadoRegla res = regla.evaluar(contexto);
-            resultadosParciales.add(res);
-
-            if (res.isAplico()) {
-                NivelRiesgo propuesto = res.getNivelRiesgoPropuesto();
-
-                if (propuesto == NivelRiesgo.RECHAZADO) {
-                    rechazadoInmediato = true;
-                    motivoPrincipal = res.getDetalle();
-                } else if (propuesto == NivelRiesgo.ALTO) {
-                    contadorAltos++;
-                } else if (propuesto == NivelRiesgo.MEDIO) {
-                    nivelMinimoMedio = true; // ReglaEmpresaNueva activa esto
-                }
-
-                if (res.getModificadorPuntos() != null) {
-                    modificadorTotal += res.getModificadorPuntos();
-                }
-            }
-        }
-
-        // 2. Determinamos el nivel base
-        NivelRiesgo nivelFinal;
-
-        if (rechazadoInmediato) {
-            nivelFinal = NivelRiesgo.RECHAZADO;
-        } else if (contadorAltos >= 2) {
-            nivelFinal = NivelRiesgo.RECHAZADO;
-            motivoPrincipal = "Rechazado por acumulación de " + contadorAltos + " alertas de nivel ALTO.";
-        } else if (contadorAltos == 1) {
-            nivelFinal = NivelRiesgo.ALTO;
-            motivoPrincipal = "Riesgo ALTO por alerta importante detectada.";
-        } else {
-            nivelFinal = NivelRiesgo.BAJO;
-        }
-
-        // 3. Aplicamos modificadores (+1 Producto Estricto / -1 Historial Excelente)
-        if (nivelFinal != NivelRiesgo.RECHAZADO) {
-            nivelFinal = aplicarModificador(nivelFinal, modificadorTotal);
-            if (modificadorTotal > 0) {
-                motivoPrincipal = "Nivel aumentado por producto ARRENDAMIENTO_FINANCIERO.";
-            } else if (modificadorTotal < 0) {
-                motivoPrincipal = "Riesgo reducido un nivel gracias a historial de pagos excelente.";
-            }
-        }
-
-        // 4. Garantizamos el mínimo MEDIO para empresa nueva (Regla 3)
-        if (nivelFinal == NivelRiesgo.BAJO && nivelMinimoMedio) {
-            nivelFinal = NivelRiesgo.MEDIO;
-            motivoPrincipal = "Empresa con menos de 18 meses: nivel mínimo es MEDIO.";
-        }
-
-        // 5. Construimos y devolvemos el resultado final
-        return armarResultado(contexto, resultadosParciales, nivelFinal, motivoPrincipal);
+        List<ResultadoRegla> resultadosParciales = evaluarTodasLasReglas(contexto);
+        Acumulador acumulador = procesarResultados(resultadosParciales);
+        NivelRiesgo nivelFinal = determinarNivelFinal(acumulador);
+        String motivo = determinarMotivo(acumulador, nivelFinal);
+        return armarResultado(contexto, resultadosParciales, nivelFinal, motivo);
     }
 
-    // ─── Sube o baja el nivel según el modificador acumulado ───────────────────
+    // ─── Paso 1: Evalúa todas las reglas y devuelve los resultados ─────────────
+    private List<ResultadoRegla> evaluarTodasLasReglas(ContextoEvaluacion contexto) {
+        List<ResultadoRegla> resultados = new ArrayList<>();
+        for (ReglaEvaluacion regla : reglas) {
+            resultados.add(regla.evaluar(contexto));
+        }
+        return resultados;
+    }
+
+    // ─── Paso 2: Procesa los resultados y acumula contadores ───────────────────
+    private Acumulador procesarResultados(List<ResultadoRegla> resultados) {
+        Acumulador acumulador = new Acumulador();
+        for (ResultadoRegla res : resultados) {
+            if (res.isAplico()) {
+                acumulador.procesar(res);
+            }
+        }
+        return acumulador;
+    }
+
+    // ─── Paso 3: Determina el nivel base según los contadores ──────────────────
+    private NivelRiesgo determinarNivelFinal(Acumulador acumulador) {
+        NivelRiesgo nivel = calcularNivelBase(acumulador);
+        nivel = aplicarModificador(nivel, acumulador.modificadorTotal);
+        return aplicarMinimoMedio(nivel, acumulador.nivelMinimoMedio);
+    }
+
+    private NivelRiesgo calcularNivelBase(Acumulador acumulador) {
+        if (acumulador.rechazadoInmediato) return NivelRiesgo.RECHAZADO;
+        if (acumulador.contadorAltos >= 2)  return NivelRiesgo.RECHAZADO;
+        if (acumulador.contadorAltos == 1)  return NivelRiesgo.ALTO;
+        return NivelRiesgo.BAJO;
+    }
+
     private NivelRiesgo aplicarModificador(NivelRiesgo nivel, int modificador) {
-        // Usamos Arrays.asList (compatible Java 8+) en lugar de List.of (Java 9+)
+        if (nivel == NivelRiesgo.RECHAZADO) return nivel;
         List<NivelRiesgo> escala = Arrays.asList(NivelRiesgo.BAJO, NivelRiesgo.MEDIO, NivelRiesgo.ALTO);
         int indice = escala.indexOf(nivel);
         int nuevoIndice = Math.max(0, Math.min(escala.size() - 1, indice + modificador));
         return escala.get(nuevoIndice);
     }
 
-    // ─── Arma el objeto ResultadoEvaluacion con todos sus detalles ─────────────
+    private NivelRiesgo aplicarMinimoMedio(NivelRiesgo nivel, boolean nivelMinimoMedio) {
+        if (nivelMinimoMedio && nivel == NivelRiesgo.BAJO) return NivelRiesgo.MEDIO;
+        return nivel;
+    }
+
+    // ─── Paso 4: Determina el motivo final ─────────────────────────────────────
+    private String determinarMotivo(Acumulador acumulador, NivelRiesgo nivelFinal) {
+        if (acumulador.rechazadoInmediato)                                  return acumulador.motivoPrincipal;
+        if (acumulador.contadorAltos >= 2)                                  return "Rechazado por acumulación de " + acumulador.contadorAltos + " alertas de nivel ALTO.";
+        if (nivelFinal == NivelRiesgo.MEDIO && acumulador.nivelMinimoMedio) return "Empresa con menos de 18 meses: nivel mínimo es MEDIO.";
+        if (acumulador.modificadorTotal > 0)                                return "Nivel aumentado por producto ARRENDAMIENTO_FINANCIERO.";
+        if (acumulador.modificadorTotal < 0)                                return "Riesgo reducido un nivel gracias a historial de pagos excelente.";
+        if (acumulador.contadorAltos == 1)                                  return "Riesgo ALTO por alerta importante detectada.";
+        return "Evaluación completada con éxito. Cliente apto.";
+    }
+
+    // ─── Paso 5: Arma el ResultadoEvaluacion final ─────────────────────────────
     private ResultadoEvaluacion armarResultado(ContextoEvaluacion contexto,
                                                List<ResultadoRegla> parciales,
                                                NivelRiesgo nivel,
@@ -108,17 +99,44 @@ public class OrdenarisRiskEngine {
         resultadoFinal.setNivelRiesgo(nivel);
         resultadoFinal.setMotivoFinal(motivo);
         resultadoFinal.setFechaEvaluacion(LocalDateTime.now());
+        resultadoFinal.setDetallesReglas(construirDetalles(parciales, resultadoFinal));
+        return resultadoFinal;
+    }
 
-        List<DetalleReglaEvaluada> detallesBD = new ArrayList<>();
+    private List<DetalleReglaEvaluada> construirDetalles(List<ResultadoRegla> parciales,
+                                                         ResultadoEvaluacion resultadoFinal) {
+        List<DetalleReglaEvaluada> detalles = new ArrayList<>();
         for (ResultadoRegla rr : parciales) {
             DetalleReglaEvaluada det = new DetalleReglaEvaluada();
             det.setResultadoEvaluacion(resultadoFinal);
             det.setNombreRegla(rr.getNombreRegla());
             det.setResultado(rr.isAplico() ? "ALERTA: " + rr.getDetalle() : "OK");
-            detallesBD.add(det);
+            detalles.add(det);
         }
-        resultadoFinal.setDetallesReglas(detallesBD);
+        return detalles;
+    }
 
-        return resultadoFinal;
+    // ─── Clase interna para acumular resultados ────────────────────────────────
+    private static class Acumulador {
+        int contadorAltos = 0;
+        int modificadorTotal = 0;
+        boolean rechazadoInmediato = false;
+        boolean nivelMinimoMedio = false;
+        String motivoPrincipal = "";
+
+        void procesar(ResultadoRegla res) {
+            NivelRiesgo propuesto = res.getNivelRiesgoPropuesto();
+            if (propuesto == NivelRiesgo.RECHAZADO) {
+                rechazadoInmediato = true;
+                motivoPrincipal = res.getDetalle();
+            } else if (propuesto == NivelRiesgo.ALTO) {
+                contadorAltos++;
+            } else if (propuesto == NivelRiesgo.MEDIO) {
+                nivelMinimoMedio = true;
+            }
+            if (res.getModificadorPuntos() != null) {
+                modificadorTotal += res.getModificadorPuntos();
+            }
+        }
     }
 }
