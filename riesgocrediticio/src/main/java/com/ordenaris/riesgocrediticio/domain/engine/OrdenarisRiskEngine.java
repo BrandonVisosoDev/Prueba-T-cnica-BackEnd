@@ -22,7 +22,7 @@ public class OrdenarisRiskEngine {
         this.reglas = reglas;
     }
 
-    // ─── Método principal — Cognitive Complexity reducida ──────────────────────
+    // ─── Metodo principal — Cognitive Complexity reducida ─────────────
     public ResultadoEvaluacion evaluarRiesgo(ContextoEvaluacion contexto) {
         List<ResultadoRegla> resultadosParciales = evaluarTodasLasReglas(contexto);
         Acumulador acumulador = procesarResultados(resultadosParciales);
