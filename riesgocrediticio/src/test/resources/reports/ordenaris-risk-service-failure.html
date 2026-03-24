@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>OrdenarisRiskService - Camino Fallido</title>
+</head>
+<body>
+<h1>Camino fallido</h1>
+<p>Escenarios cubiertos por <strong>evaluarDebePropagarEmpresaNotFoundExceptionCuandoLaEmpresaNoExiste</strong> y <strong>evaluarDebeEnvolverExcepcionesGenericasEnRiesgoEvaluacionException</strong>.</p>
+<p>Si la empresa no existe, el servicio propaga <code>EmpresaNotFoundException</code>. Si falla un proveedor, el servicio encapsula el error en <code>RiesgoEvaluacionException</code>.</p>
+<p>Resultado esperado: no se invoca el motor ni se persiste informacion cuando el flujo falla.</p>
+</body>
+</html>
