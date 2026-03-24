@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ordenaris Risk Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg:       '#080808',
+            surface:  '#111111',
+            border:   '#2a2a2a',
+            muted:    '#555555',
+            soft:     '#888888',
+            text:     '#faf9f9',
+            purple:   '#a78bfa',
+            purpled:  '#7c3aed',
+          },
+          fontFamily: {
+            sans: ['IBM Plex Sans', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #080808; }
+
+    /* Animación fade-in para el resultado */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.35s ease forwards; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+
+    /* Pulso en el círculo de nivel */
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0px rgba(167,139,250,0.3); }
+      100% { box-shadow: 0 0 0 10px rgba(167,139,250,0); }
+    }
+    .pulse { animation: pulse-ring 1.5s ease-out infinite; }
+
+    input, select {
+      background: #080808;
+      border: 0.5px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #faf9f9;
+      font-size: 14px;
+      width: 100%;
+      font-family: 'IBM Plex Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: #a78bfa; }
+    select option { background: #111111; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #080808; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+  </style>
+</head>
+<body class="font-sans text-text min-h-screen">
+
+  <!-- NAVBAR -->
+  <nav class="border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 z-10" style="background: #111111;">
+    <div class="flex items-center gap-3">
+      <span class="font-mono text-purple text-lg font-medium tracking-tight">Ordenaris</span>
+      <span class="text-muted text-sm font-mono">/ risk-engine</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+      <span class="text-xs text-soft font-mono">H2 in-memory · localhost:8080</span>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- GRID PRINCIPAL -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+
+      <!-- PANEL FORMULARIO -->
+      <div class="rounded-xl border border-border p-5" style="background: #111111;">
+        <p class="text-xs text-muted uppercase tracking-widest font-mono mb-4">Evaluar empresa</p>
+
+        <!-- Chips de empresas de prueba -->
+        <p class="text-xs text-soft mb-2">Empresas de prueba cargadas en H2</p>
+        <div class="flex gap-2 mb-4">
+          <button onclick="cargarEmpresa('EMPRESA001')"
+            class="text-xs font-mono px-3 py-2 rounded-lg border border-border hover:border-purple transition-colors"
+            style="background: #080808;">
+            <span class="text-purple">EMPRESA001</span>
+            <span class="text-soft ml-1">— buena</span>
+          </button>
+          <button onclick="cargarEmpresa('EMPRESA002')"
+            class="text-xs font-mono px-3 py-2 rounded-lg border border-border hover:border-purple transition-colors"
+            style="background: #080808;">
+            <span class="text-purple">EMPRESA002</span>
+            <span class="text-soft ml-1">— riesgo</span>
+          </button>
+        </div>
+
+        <div class="border-t border-border my-4"></div>
+
+        <!-- Formulario -->
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm text-soft block mb-1">ID de empresa</label>
+            <input id="empresaId" type="text" placeholder="Ej. EMPRESA001" />
+          </div>
+          <div>
+            <label class="text-sm text-soft block mb-1">Monto solicitado ($)</label>
+            <input id="monto" type="number" placeholder="Ej. 500000" />
+          </div>
+          <div>
+            <label class="text-sm text-soft block mb-1">Producto financiero</label>
+            <select id="producto">
+              <option value="">— Selecciona un producto —</option>
+              <option value="LINEA_OPERATIVA">LINEA_OPERATIVA</option>
+              <option value="CREDITO_REVOLVENTE">CREDITO_REVOLVENTE</option>
+              <option value="ARRENDAMIENTO_FINANCIERO">ARRENDAMIENTO_FINANCIERO</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-soft block mb-1">Fecha de solicitud</label>
+            <input id="fecha" type="date" />
+          </div>
+
+          <button onclick="evaluar()"
+            class="w-full py-3 rounded-lg font-medium text-sm text-white transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2"
+            style="background: #7c3aed;" id="btnEvaluar">
+            Evaluar riesgo
+          </button>
+
+          <!-- Mensaje de error -->
+          <div id="errorMsg" class="hidden text-xs font-mono text-red-400 border border-red-900 rounded-lg px-3 py-2" style="background: #1a0a0a;"></div>
+        </div>
+      </div>
+
+      <!-- PANEL RESULTADO -->
+      <div class="rounded-xl border border-border p-5" style="background: #111111;">
+        <p class="text-xs text-muted uppercase tracking-widest font-mono mb-4">Resultado de evaluación</p>
+
+        <!-- Estado vacío -->
+        <div id="resultadoVacio" class="flex flex-col items-center justify-center h-64 text-muted gap-3">
+          <div class="w-16 h-16 rounded-full border border-border flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+            </svg>
+          </div>
+          <p class="text-sm">Ingresa los datos y evalúa una empresa</p>
+        </div>
+
+        <!-- Resultado real -->
+        <div id="resultadoPanel" class="hidden fade-in">
+          <!-- Círculo nivel -->
+          <div class="flex flex-col items-center py-4">
+            <p class="text-sm text-text font-medium mb-3">Nivel de riesgo</p>
+            <div id="nivelCirculo"
+              class="w-24 h-24 rounded-full flex items-center justify-center pulse"
+              style="border: 2.5px solid #97c459; background: #083404;">
+              <span id="nivelTexto" class="text-sm font-mono font-medium" style="color: #97c459;">BAJO</span>
+            </div>
+            <p id="motivoTexto" class="text-sm text-text text-center mt-4 px-4 leading-relaxed"></p>
+          </div>
+
+          <div class="border-t border-border my-3"></div>
+
+          <!-- Detalle reglas -->
+          <p class="text-xs text-muted uppercase tracking-widest font-mono mb-3">Detalle de reglas</p>
+          <div id="reglasList" class="space-y-1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="rounded-xl border border-border p-5" style="background: #111111;">
+      <p class="text-xs text-muted uppercase tracking-widest font-mono mb-4">Historial de evaluaciones</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="text-left text-xs text-muted uppercase tracking-widest font-mono pb-3 pr-4">Empresa</th>
+              <th class="text-left text-xs text-muted uppercase tracking-widest font-mono pb-3 pr-4">Monto</th>
+              <th class="text-left text-xs text-muted uppercase tracking-widest font-mono pb-3 pr-4">Producto</th>
+              <th class="text-left text-xs text-muted uppercase tracking-widest font-mono pb-3 pr-4">Motivo</th>
+              <th class="text-left text-xs text-muted uppercase tracking-widest font-mono pb-3">Nivel</th>
+            </tr>
+          </thead>
+          <tbody id="historialBody">
+            <tr>
+              <td colspan="5" class="text-center text-soft text-sm py-8 font-mono">Sin evaluaciones aún</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API = 'http://localhost:8080/api/v1/riesgo/evaluar';
+    const historial = [];
+
+    // Colores por nivel de riesgo
+    const nivelConfig = {
+      BAJO:      { bg: '#083404', border: '#97c459', color: '#97c459', badge: 'bg-green-950 text-green-400 border border-green-900' },
+      MEDIO:     { bg: '#042c53', border: '#85b7eb', color: '#85b7eb', badge: 'bg-blue-950 text-blue-400 border border-blue-900' },
+      ALTO:      { bg: '#412402', border: '#ef9f27', color: '#ef9f27', badge: 'bg-amber-950 text-amber-400 border border-amber-900' },
+      RECHAZADO: { bg: '#501313', border: '#f09595', color: '#f09595', badge: 'bg-red-950 text-red-400 border border-red-900' },
+    };
+
+    function cargarEmpresa(id) {
+      document.getElementById('empresaId').value = id;
+      document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+    }
+
+    async function evaluar() {
+      const empresaId  = document.getElementById('empresaId').value.trim();
+      const monto      = document.getElementById('monto').value.trim();
+      const producto   = document.getElementById('producto').value;
+      const fecha      = document.getElementById('fecha').value;
+      const errorMsg   = document.getElementById('errorMsg');
+      const btn        = document.getElementById('btnEvaluar');
+
+      // Validación básica
+      if (!empresaId || !monto || !producto || !fecha) {
+        mostrarError('Completa todos los campos antes de evaluar.');
+        return;
+      }
+
+      errorMsg.classList.add('hidden');
+      btn.innerHTML = '<svg class="spinner w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Evaluando...';
+      btn.disabled = true;
+
+      try {
+        const body = {
+          empresaId,
+          montoSolicitado: parseFloat(monto),
+          productoFinanciero: producto,
+          fechaSolicitud: fecha
+        };
+
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          mostrarError(data.mensaje || 'Error al conectar con el servidor.');
+          return;
+        }
+
+        mostrarResultado(data, body);
+        agregarHistorial(data, body);
+
+      } catch (err) {
+        mostrarError('No se pudo conectar con el servidor. ¿Está corriendo Spring Boot en localhost:8080?');
+      } finally {
+        btn.innerHTML = 'Evaluar riesgo';
+        btn.disabled = false;
+      }
+    }
+
+    function mostrarResultado(data, body) {
+      const config = nivelConfig[data.nivelRiesgo] || nivelConfig.MEDIO;
+
+      document.getElementById('resultadoVacio').classList.add('hidden');
+      const panel = document.getElementById('resultadoPanel');
+      panel.classList.remove('hidden');
+      panel.classList.add('fade-in');
+
+      // Círculo
+      const circulo = document.getElementById('nivelCirculo');
+      circulo.style.background = config.bg;
+      circulo.style.borderColor = config.border;
+
+      const nivelTexto = document.getElementById('nivelTexto');
+      nivelTexto.textContent = data.nivelRiesgo;
+      nivelTexto.style.color = config.color;
+
+      document.getElementById('motivoTexto').textContent = data.motivoFinal;
+
+      // Reglas
+      const lista = document.getElementById('reglasList');
+      lista.innerHTML = '';
+      if (data.detallesReglas && data.detallesReglas.length > 0) {
+        data.detallesReglas.forEach(r => {
+          const esAlerta = r.resultado && r.resultado.startsWith('ALERTA');
+          const div = document.createElement('div');
+          div.className = 'flex justify-between items-center py-2 border-b border-border last:border-none';
+          div.innerHTML = `
+            <span class="text-sm text-text">${r.nombreRegla}</span>
+            <span class="text-xs font-mono" style="color: ${esAlerta ? '#a78bfa' : '#97c459'}">
+              ${esAlerta ? r.resultado.replace('ALERTA: ', '') : 'OK'}
+            </span>`;
+          lista.appendChild(div);
+        });
+      }
+    }
+
+    function agregarHistorial(data, body) {
+      const config = nivelConfig[data.nivelRiesgo] || nivelConfig.MEDIO;
+      historial.unshift({ data, body });
+
+      const tbody = document.getElementById('historialBody');
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-border fade-in';
+      tr.innerHTML = `
+        <td class="py-3 pr-4 font-mono text-sm text-purple">${body.empresaId}</td>
+        <td class="py-3 pr-4 text-sm text-soft">$${parseFloat(body.montoSolicitado).toLocaleString()}</td>
+        <td class="py-3 pr-4 text-xs font-mono text-soft">${body.productoFinanciero}</td>
+        <td class="py-3 pr-4 text-xs text-soft max-w-xs truncate">${data.motivoFinal}</td>
+        <td class="py-3">
+          <span class="text-xs font-mono px-3 py-1 rounded-full ${config.badge}">${data.nivelRiesgo}</span>
+        </td>`;
+
+      if (historial.length === 1) tbody.innerHTML = '';
+      tbody.insertBefore(tr, tbody.firstChild);
+    }
+
+    function mostrarError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = '⚠ ' + msg;
+      el.classList.remove('hidden');
+    }
+
+    // Setear fecha de hoy por defecto
+    document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    image: ordenaris/riesgocrediticio:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
