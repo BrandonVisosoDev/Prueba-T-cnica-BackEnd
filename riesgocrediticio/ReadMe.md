@@ -24,8 +24,7 @@ El motor recibe una solicitud con los datos de la empresa, consulta tres fuentes
 
 **1. Clonar el repositorio**
 ```bash
-git clone https://github.com/ordenaris/riesgo-crediticio.git
-cd riesgo-crediticio
+https://github.com/BrandonVisosoDev/Prueba-T-cnica-BackEnd.git
 ```
 
 **2. Compilar el proyecto**
