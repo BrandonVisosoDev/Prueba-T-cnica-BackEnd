@@ -8,7 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/riesgo")
 @RequiredArgsConstructor
@@ -20,7 +20,7 @@ public class OrdenarisRiskController {
     public ResponseEntity<ResultadoEvaluacion> evaluarRiesgo(@Valid @RequestBody SolicitudEvaluacion solicitud) {
 
         // El controlador solo recibe la petición y se la pasa al Service.
-        // Nada de lógica de negocio aquí (¡Otra buena práctica para tu entrevista!)
+        // Nada de lógica de negocio aquí
         ResultadoEvaluacion resultado = riskService.evaluar(solicitud);
 
         return ResponseEntity.ok(resultado);

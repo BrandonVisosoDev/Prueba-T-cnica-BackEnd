@@ -1,5 +1,6 @@
 package com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class DetalleReglaEvaluada {
     // Relación de vuelta al Resultado General
     @ManyToOne
     @JoinColumn(name = "resultado_evaluacion_id")
+    @JsonIgnore
     private ResultadoEvaluacion resultadoEvaluacion;
 
     private String nombreRegla; // Ej: "Deuda Activa", "Empresa Nueva"
