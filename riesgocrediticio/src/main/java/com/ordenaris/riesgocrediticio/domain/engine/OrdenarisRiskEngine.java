@@ -6,12 +6,15 @@ import com.ordenaris.riesgocrediticio.domain.rule.ReglaEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.model.enums.NivelRiesgo;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.DetalleReglaEvaluada;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.ResultadoEvaluacion;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+@Slf4j
 
 @Component
 public class OrdenarisRiskEngine {
@@ -24,10 +27,12 @@ public class OrdenarisRiskEngine {
 
     // ─── Metodo principal — Cognitive Complexity reducida ─────────────
     public ResultadoEvaluacion evaluarRiesgo(ContextoEvaluacion contexto) {
+        log.info(">> Motor iniciado — evaluando {} reglas", reglas.size());
         List<ResultadoRegla> resultadosParciales = evaluarTodasLasReglas(contexto);
         Acumulador acumulador = procesarResultados(resultadosParciales);
         NivelRiesgo nivelFinal = determinarNivelFinal(acumulador);
         String motivo = determinarMotivo(acumulador, nivelFinal);
+        log.info(">> Motor finalizado — Nivel: {} | Motivo: {}", nivelFinal, motivo); // ← agrega
         return armarResultado(contexto, resultadosParciales, nivelFinal, motivo);
     }
 
