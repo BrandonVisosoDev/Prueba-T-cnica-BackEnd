@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
-
 @Component
 public class OrdenarisRiskEngine {
 
@@ -25,14 +24,17 @@ public class OrdenarisRiskEngine {
         this.reglas = reglas;
     }
 
-    // ─── Metodo principal — Cognitive Complexity reducida ─────────────
+    // ─── Metodo principal ──────────────────────────────────────────────────────
     public ResultadoEvaluacion evaluarRiesgo(ContextoEvaluacion contexto) {
-        log.info(">> Motor iniciado — evaluando {} reglas", reglas.size());
+        log.info(">> [MOTOR - INICIO] Evaluando {} reglas para empresa: {}",
+                reglas.size(), contexto.getSolicitud().getEmpresaId());
+
         List<ResultadoRegla> resultadosParciales = evaluarTodasLasReglas(contexto);
         Acumulador acumulador = procesarResultados(resultadosParciales);
         NivelRiesgo nivelFinal = determinarNivelFinal(acumulador);
         String motivo = determinarMotivo(acumulador, nivelFinal);
-        log.info(">> Motor finalizado — Nivel: {} | Motivo: {}", nivelFinal, motivo); // ← agrega
+
+        log.info(">> [MOTOR - FIN] Nivel final: {} | Motivo: {}", nivelFinal, motivo);
         return armarResultado(contexto, resultadosParciales, nivelFinal, motivo);
     }
 
@@ -40,7 +42,16 @@ public class OrdenarisRiskEngine {
     private List<ResultadoRegla> evaluarTodasLasReglas(ContextoEvaluacion contexto) {
         List<ResultadoRegla> resultados = new ArrayList<>();
         for (ReglaEvaluacion regla : reglas) {
-            resultados.add(regla.evaluar(contexto));
+            ResultadoRegla resultado = regla.evaluar(contexto);
+            if (resultado.isAplico()) {
+                log.warn(">> [MOTOR - REGLA] ⚠ Regla activada: {} | Nivel propuesto: {} | Detalle: {}",
+                        resultado.getNombreRegla(),
+                        resultado.getNivelRiesgoPropuesto(),
+                        resultado.getDetalle());
+            } else {
+                log.info(">> [MOTOR - REGLA] ✓ Regla sin alerta: {}", resultado.getNombreRegla());
+            }
+            resultados.add(resultado);
         }
         return resultados;
     }
@@ -53,14 +64,23 @@ public class OrdenarisRiskEngine {
                 acumulador.procesar(res);
             }
         }
+        log.info(">> [MOTOR - ACUMULADOR] Altos: {} | Rechazado inmediato: {} | Modificador total: {} | Mínimo medio: {}",
+                acumulador.contadorAltos,
+                acumulador.rechazadoInmediato,
+                acumulador.modificadorTotal,
+                acumulador.nivelMinimoMedio);
         return acumulador;
     }
 
     // ─── Paso 3: Determina el nivel base según los contadores ──────────────────
     private NivelRiesgo determinarNivelFinal(Acumulador acumulador) {
         NivelRiesgo nivel = calcularNivelBase(acumulador);
+        log.info(">> [MOTOR - NIVEL] Nivel base calculado: {}", nivel);
         nivel = aplicarModificador(nivel, acumulador.modificadorTotal);
-        return aplicarMinimoMedio(nivel, acumulador.nivelMinimoMedio);
+        log.info(">> [MOTOR - NIVEL] Nivel tras modificador ({}): {}", acumulador.modificadorTotal, nivel);
+        nivel = aplicarMinimoMedio(nivel, acumulador.nivelMinimoMedio);
+        log.info(">> [MOTOR - NIVEL] Nivel final tras mínimo medio: {}", nivel);
+        return nivel;
     }
 
     private NivelRiesgo calcularNivelBase(Acumulador acumulador) {
@@ -105,6 +125,7 @@ public class OrdenarisRiskEngine {
         resultadoFinal.setMotivoFinal(motivo);
         resultadoFinal.setFechaEvaluacion(LocalDateTime.now());
         resultadoFinal.setDetallesReglas(construirDetalles(parciales, resultadoFinal));
+        log.info(">> [MOTOR - RESULTADO] Resultado armado con {} detalles de reglas", parciales.size());
         return resultadoFinal;
     }
 
