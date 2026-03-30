@@ -19,14 +19,14 @@ public class GlobalExceptionHandler {
     // ─── 404 — Empresa no encontrada ───────────────────────────────────────────
     @ExceptionHandler(EmpresaNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEmpresaNotFound(EmpresaNotFoundException ex) {
-        log.warn(">> 404 - {}", ex.getMessage());
+        log.warn(">> 404 - {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     // ─── 422 — Error en la evaluación del motor ─────────────────────────────────
     @ExceptionHandler(RiesgoEvaluacionException.class)
     public ResponseEntity<Map<String, Object>> handleRiesgoEvaluacion(RiesgoEvaluacionException ex) {
-        log.error(">> 422 - {}", ex.getMessage()); // ← agrega
+        log.error(">> 422 - {}", ex.getMessage(), ex); // ← agrega
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
