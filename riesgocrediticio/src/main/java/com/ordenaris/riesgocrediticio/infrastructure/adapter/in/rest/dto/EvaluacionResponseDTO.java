@@ -1,4 +1,4 @@
-package com.ordenaris.riesgocrediticio.domain.model;
+package com.ordenaris.riesgocrediticio.infrastructure.adapter.in.rest.dto;
 
 import com.ordenaris.riesgocrediticio.domain.model.enums.NivelRiesgo;
 import lombok.AllArgsConstructor;

@@ -3,7 +3,8 @@ package com.ordenaris.riesgocrediticio.application;
 import com.ordenaris.riesgocrediticio.domain.engine.OrdenarisRiskEngine;
 import com.ordenaris.riesgocrediticio.domain.model.ContextoEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.model.EmpresaNotFoundException;
-import com.ordenaris.riesgocrediticio.domain.model.EvaluacionResponseDTO;
+import com.ordenaris.riesgocrediticio.domain.model.ResultadoRegla;
+import com.ordenaris.riesgocrediticio.domain.model.ResultadoRiesgo;
 import com.ordenaris.riesgocrediticio.domain.model.RiesgoEvaluacionException;
 import com.ordenaris.riesgocrediticio.domain.model.SolicitudEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.port.in.EvaluarRiesgoPort;
@@ -31,7 +32,7 @@ public class OrdenarisRiskService implements EvaluarRiesgoPort {
     private final OrdenarisRiskEngine motorReglas;
 
     @Override
-    public EvaluacionResponseDTO evaluar(SolicitudEvaluacion solicitud) {
+    public ResultadoRiesgo evaluar(SolicitudEvaluacion solicitud) {
         log.info(">> [INICIO] Evaluación de riesgo | EmpresaId: {} | Producto: {} | Monto: {}",
                 solicitud.getEmpresaId(), solicitud.getProductoFinanciero(), solicitud.getMontoSolicitado());
         try {
@@ -65,9 +66,9 @@ public class OrdenarisRiskService implements EvaluarRiesgoPort {
             ResultadoEvaluacion guardado = resultadoRepo.save(resultadoFinal);
             log.info(">> [PASO 5] Resultado persistido correctamente | Id: {}", guardado.getId());
 
-            // 6. Mapeamos a DTO y devolvemos
-            log.info(">> [PASO 6] Mapeando resultado a DTO de respuesta");
-            EvaluacionResponseDTO respuesta = mapearADTO(guardado);
+            // 6. Mapeamos a objeto de dominio y devolvemos
+            log.info(">> [PASO 6] Mapeando resultado a objeto de dominio ResultadoRiesgo");
+            ResultadoRiesgo respuesta = mapearADominio(guardado);
             log.info(">> [FIN] Evaluación finalizada exitosamente | EmpresaId: {} | Nivel: {}",
                     solicitud.getEmpresaId(), respuesta.getNivelRiesgo());
             return respuesta;
@@ -84,17 +85,21 @@ public class OrdenarisRiskService implements EvaluarRiesgoPort {
         }
     }
 
-    // ─── Mapea la entidad JPA al DTO de respuesta ──────────────────────────────
-    private EvaluacionResponseDTO mapearADTO(ResultadoEvaluacion entidad) {
-        List<EvaluacionResponseDTO.DetalleReglaDTO> detalles = entidad.getDetallesReglas()
+    // ─── Mapea la entidad JPA al objeto de dominio ResultadoRiesgo ────────────
+    private ResultadoRiesgo mapearADominio(ResultadoEvaluacion entidad) {
+        List<ResultadoRegla> detalles = entidad.getDetallesReglas()
                 .stream()
-                .map(d -> EvaluacionResponseDTO.DetalleReglaDTO.builder()
-                        .nombreRegla(d.getNombreRegla())
-                        .resultado(d.getResultado())
-                        .build()).toList();
+                .map(d -> new ResultadoRegla(
+                        d.getNombreRegla(),
+                        false,
+                        null,
+                        null,
+                        d.getResultado()
+                ))
+                .toList();
 
 
-        return EvaluacionResponseDTO.builder()
+        return ResultadoRiesgo.builder()
                 .empresaId(entidad.getEmpresaId())
                 .nivelRiesgo(entidad.getNivelRiesgo())
                 .motivoFinal(entidad.getMotivoFinal())
