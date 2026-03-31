@@ -93,6 +93,7 @@ src/main/java/com/ordenaris/riesgocrediticio/
 │   ├── model/
 │   │   ├── ContextoEvaluacion       # Datos empaquetados para el motor
 │   │   ├── ResultadoRegla           # Resultado individual por regla
+│   │   ├── ResultadoRiesgo          # Objeto de dominio puro que retorna el puerto
 │   │   ├── SolicitudEvaluacion      # DTO de entrada
 │   │   ├── EmpresaNotFoundException # Excepción de dominio
 │   │   ├── RiesgoEvaluacionException
@@ -101,7 +102,7 @@ src/main/java/com/ordenaris/riesgocrediticio/
 │   │       └── ProductoFinanciero   # LINEA_OPERATIVA, CREDITO_REVOLVENTE, ARRENDAMIENTO_FINANCIERO
 │   ├── port/
 │   │   ├── in/
-│   │   │   └── EvaluarRiesgoPort    # Puerto de entrada del dominio
+│   │   │   └── EvaluarRiesgoPort    # Puerto de entrada — retorna ResultadoRiesgo
 │   │   └── out/
 │   │       ├── DatosContablesProvider
 │   │       ├── HistorialPagosProvider
@@ -121,7 +122,9 @@ src/main/java/com/ordenaris/riesgocrediticio/
 └── infrastructure/                  # Tecnología — Spring Boot, JPA, H2
     ├── adapter/
     │   ├── in/rest/
-    │   │   └── OrdenarisRiskController
+    │   │   ├── OrdenarisRiskController
+    │   │   └── dto/
+    │   │       └── EvaluacionResponseDTO  # DTO de presentación al cliente
     │   └── out/persistence/
     │       ├── Empresa
     │       ├── DatosContables
@@ -142,6 +145,7 @@ src/main/java/com/ordenaris/riesgocrediticio/
 ### Principios y patrones aplicados
 
 - **Arquitectura Hexagonal** — dominio completamente desacoplado de la infraestructura
+- **DTO Response Pattern** — el dominio expone objetos de dominio puros; la capa web es responsable de mapearlos al DTO de presentación antes de responder al cliente
 - **Strategy Pattern** — cada regla es una estrategia intercambiable
 - **Chain of Responsibility** — el motor itera las reglas secuencialmente
 - **Principios SOLID** — Single Responsibility, Open/Closed, Dependency Inversion
