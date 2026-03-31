@@ -2,6 +2,7 @@ package com.ordenaris.riesgocrediticio.application;
 
 import com.ordenaris.riesgocrediticio.domain.engine.OrdenarisRiskEngine;
 import com.ordenaris.riesgocrediticio.domain.model.EmpresaNotFoundException;
+import com.ordenaris.riesgocrediticio.domain.model.ResultadoRiesgo;
 import com.ordenaris.riesgocrediticio.domain.model.RiesgoEvaluacionException;
 import com.ordenaris.riesgocrediticio.domain.model.SolicitudEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.model.enums.NivelRiesgo;
@@ -10,6 +11,7 @@ import com.ordenaris.riesgocrediticio.domain.port.out.DatosContablesProvider;
 import com.ordenaris.riesgocrediticio.domain.port.out.HistorialPagosProvider;
 import com.ordenaris.riesgocrediticio.domain.port.out.VerificacionLegalProvider;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.DatosContables;
+
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.Empresa;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.EmpresaRepository;
 import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.HistorialPagos;
@@ -30,7 +32,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,11 +94,12 @@ class OrdenarisRiskServiceTest {
         when(motorReglas.evaluarRiesgo(any())).thenReturn(resultadoMotor);
         when(resultadoRepo.save(resultadoMotor)).thenReturn(resultadoGuardado);
 
-        ResultadoEvaluacion resultado = service.evaluar(solicitud);
+        ResultadoRiesgo resultado = service.evaluar(solicitud);
 
-        assertSame(resultadoGuardado, resultado);
-        assertEquals(99L, resultado.getId());
+        assertNotNull(resultado);
+        assertEquals("EMP-001", resultado.getEmpresaId());
         assertEquals(NivelRiesgo.BAJO, resultado.getNivelRiesgo());
+        assertEquals("Evaluacion completada con exito. Cliente apto.", resultado.getMotivoFinal());
         verify(empresaRepo).findById("EMP-001");
         verify(datosContablesProvider).obtenerDatosContables("EMP-001");
         verify(historialPagosProvider).obtenerHistorialPagos("EMP-001");
