@@ -40,7 +40,7 @@ public class OrdenarisRiskController {
         return ResponseEntity.ok(respuesta);
     }
 
-    // ??? Mapea el objeto de dominio al DTO que ve el cliente ??????????????????
+    //  Mapea el objeto de dominio al DTO que ve el cliente
     private EvaluacionResponseDTO mapearADTO(ResultadoRiesgo resultado) {
         List<EvaluacionResponseDTO.DetalleReglaDTO> detalles = resultado.getDetallesReglas()
                 .stream()
