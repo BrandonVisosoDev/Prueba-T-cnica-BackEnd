@@ -1,13 +1,19 @@
 package com.ordenaris.riesgocrediticio.infrastructure.adapter.in.rest;
 
+import com.ordenaris.riesgocrediticio.domain.model.ResultadoRiesgo;
 import com.ordenaris.riesgocrediticio.domain.model.SolicitudEvaluacion;
 import com.ordenaris.riesgocrediticio.domain.port.in.EvaluarRiesgoPort;
-import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.ResultadoEvaluacion;
-import com.ordenaris.riesgocrediticio.domain.port.in.EvaluarRiesgoPort;
+import com.ordenaris.riesgocrediticio.infrastructure.adapter.in.rest.dto.EvaluacionResponseDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/riesgo")
@@ -17,12 +23,39 @@ public class OrdenarisRiskController {
     private final EvaluarRiesgoPort riskService;
 
     @PostMapping("/evaluar")
-    public ResponseEntity<ResultadoEvaluacion> evaluarRiesgo(@Valid @RequestBody SolicitudEvaluacion solicitud) {
+    public ResponseEntity<EvaluacionResponseDTO> evaluarRiesgo(
+            @Valid @RequestBody SolicitudEvaluacion solicitud) {
 
-        // El controlador solo recibe la peticiÃ³n y se la pasa al Service.
-        // Nada de lÃ³gica de negocio aquÃ­
-        ResultadoEvaluacion resultado = riskService.evaluar(solicitud);
+        log.info(">> [CONTROLLER] Solicitud recibida | EmpresaId: {}", solicitud.getEmpresaId());
 
-        return ResponseEntity.ok(resultado);
+        // 1. Llamamos al dominio — nos devuelve un objeto de dominio puro
+        ResultadoRiesgo resultado = riskService.evaluar(solicitud);
+
+        // 2. Mapeamos al DTO de presentación — aquí vive esta responsabilidad
+        EvaluacionResponseDTO respuesta = mapearADTO(resultado);
+
+        log.info(">> [CONTROLLER] Respuesta lista | EmpresaId: {} | Nivel: {}",
+                solicitud.getEmpresaId(), respuesta.getNivelRiesgo());
+
+        return ResponseEntity.ok(respuesta);
+    }
+
+    //  Mapea el objeto de dominio al DTO que ve el cliente
+    private EvaluacionResponseDTO mapearADTO(ResultadoRiesgo resultado) {
+        List<EvaluacionResponseDTO.DetalleReglaDTO> detalles = resultado.getDetallesReglas()
+                .stream()
+                .map(d -> EvaluacionResponseDTO.DetalleReglaDTO.builder()
+                        .nombreRegla(d.getNombreRegla())
+                        .resultado(d.getDetalle())
+                        .build())
+                .collect(Collectors.toList());
+
+        return EvaluacionResponseDTO.builder()
+                .empresaId(resultado.getEmpresaId())
+                .nivelRiesgo(resultado.getNivelRiesgo())
+                .motivoFinal(resultado.getMotivoFinal())
+                .fechaEvaluacion(resultado.getFechaEvaluacion())
+                .detallesReglas(detalles)
+                .build();
     }
 }
