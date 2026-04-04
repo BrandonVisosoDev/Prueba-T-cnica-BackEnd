@@ -17,8 +17,8 @@ public class VerificacionLegalAdapter implements VerificacionLegalProvider {
                 .map(legal -> new VerificacionLegalEvaluacion(
                         legal.getEmpresaId(),
                         legal.getJuicioMercantilEnCurso(),
-                        legal.getNumeroDemandasActivas(),
-                        legal.getEmbargoActivo()))
+                        legal.getNumeroDemandas(),
+                        legal.getTieneEmbargos()))
                 .orElse(null);
     }
 }
