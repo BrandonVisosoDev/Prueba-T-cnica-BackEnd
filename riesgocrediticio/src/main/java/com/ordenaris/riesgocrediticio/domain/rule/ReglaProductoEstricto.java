@@ -19,7 +19,7 @@ public class ReglaProductoEstricto implements ReglaEvaluacion {
                     "Producto Estricto",
                     true,
                     null,
-                    +1, // ← Sube un nivel de riesgo
+                    1,
                     "El producto solicitado es ARRENDAMIENTO_FINANCIERO, el cual aplica un nivel adicional de riesgo."
             );
         }
@@ -29,7 +29,7 @@ public class ReglaProductoEstricto implements ReglaEvaluacion {
                 false,
                 null,
                 0,
-                "El producto solicitado no aplica restricción adicional de riesgo."
+                "El producto solicitado no aplica restriccion adicional de riesgo."
         );
     }
 }

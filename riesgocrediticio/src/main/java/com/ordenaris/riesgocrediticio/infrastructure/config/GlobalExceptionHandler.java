@@ -2,6 +2,7 @@ package com.ordenaris.riesgocrediticio.infrastructure.config;
 
 import com.ordenaris.riesgocrediticio.domain.model.EmpresaNotFoundException;
 import com.ordenaris.riesgocrediticio.domain.model.RiesgoEvaluacionException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,28 +13,29 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ─── 404 — Empresa no encontrada ───────────────────────────────────────────
     @ExceptionHandler(EmpresaNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEmpresaNotFound(EmpresaNotFoundException ex) {
+        log.warn("404 empresa no encontrada", ex);
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    // ─── 422 — Error en la evaluación del motor ─────────────────────────────────
     @ExceptionHandler(RiesgoEvaluacionException.class)
     public ResponseEntity<Map<String, Object>> handleRiesgoEvaluacion(RiesgoEvaluacionException ex) {
+        log.error("422 error de evaluacion", ex);
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
-    // ─── 400 — Validaciones del @Valid (campos obligatorios, etc) ───────────────
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidaciones(MethodArgumentNotValidException ex) {
+        log.warn("400 validacion fallida", ex);
         Map<String, Object> errores = new HashMap<>();
         errores.put("timestamp", LocalDateTime.now());
         errores.put("status", HttpStatus.BAD_REQUEST.value());
-        errores.put("error", "Error de validación");
+        errores.put("error", "Error de validacion");
 
         Map<String, String> campos = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -43,14 +45,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errores);
     }
 
-    // ─── 500 — Cualquier error inesperado ───────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenerico(Exception ex) {
+        log.error("500 error inesperado", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Error interno del servidor. Contacte al administrador.");
     }
 
-    // ─── Metodo auxiliar para construir la respuesta ────────────────────────────
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String mensaje) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());

@@ -1,8 +1,14 @@
 package com.ordenaris.riesgocrediticio.domain.port.in;
 
+import com.ordenaris.riesgocrediticio.domain.model.ResultadoRiesgo;
 import com.ordenaris.riesgocrediticio.domain.model.SolicitudEvaluacion;
-import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.ResultadoEvaluacion;
 
+/**
+ * Puerto de entrada (driving port) del dominio.
+ * Define el contrato para evaluar el riesgo de una empresa.
+ * Retorna un objeto de dominio puro, sin dependencias de infraestructura.
+ */
 public interface EvaluarRiesgoPort {
-    ResultadoEvaluacion evaluar(SolicitudEvaluacion solicitud);
+    ResultadoRiesgo evaluar(SolicitudEvaluacion solicitud);
 }
+
