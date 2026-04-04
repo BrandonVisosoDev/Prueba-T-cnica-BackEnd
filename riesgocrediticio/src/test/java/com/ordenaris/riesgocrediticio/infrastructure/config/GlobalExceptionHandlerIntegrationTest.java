@@ -1,6 +1,5 @@
 package com.ordenaris.riesgocrediticio.infrastructure.config;
 
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,17 +22,16 @@ class GlobalExceptionHandlerIntegrationTest {
     @Test
     void when404Exception_thenReturnNotFound() throws Exception {
         mockMvc.perform(post("/api/v1/riesgo/evaluar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"empresaId\":\"NOEXISTE\",\"montoSolicitado\":100000,\"productoFinanciero\":\"LINEA_OPERATIVA\",\"fechaSolicitud\":\"2026-03-24\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"empresaId\":\"NOEXISTE\",\"montoSolicitado\":100000,\"productoFinanciero\":\"LINEA_OPERATIVA\",\"fechaSolicitud\":\"2026-03-24\"}"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void whenValidationError_thenReturnBadRequest() throws Exception {
         mockMvc.perform(post("/api/v1/riesgo/evaluar")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"empresaId\":\"\",\"montoSolicitado\":100000,\"productoFinanciero\":\"LINEA_OPERATIVA\",\"fechaSolicitud\":\"2026-03-24\"}"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"empresaId\":\"\",\"montoSolicitado\":100000,\"productoFinanciero\":\"LINEA_OPERATIVA\",\"fechaSolicitud\":\"2026-03-24\"}"))
                 .andExpect(status().isBadRequest());
     }
 }
-
