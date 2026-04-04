@@ -12,32 +12,30 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ─── 404 — Empresa no encontrada ───────────────────────────────────────────
     @ExceptionHandler(EmpresaNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleEmpresaNotFound(EmpresaNotFoundException ex) {
-        log.warn(">> 404 - {}", ex.getMessage(), ex);
+        log.warn("404 empresa no encontrada", ex);
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    // ─── 422 — Error en la evaluación del motor ─────────────────────────────────
     @ExceptionHandler(RiesgoEvaluacionException.class)
     public ResponseEntity<Map<String, Object>> handleRiesgoEvaluacion(RiesgoEvaluacionException ex) {
-        log.error(">> 422 - {}", ex.getMessage(), ex); // ← agrega
+        log.error("422 error de evaluacion", ex);
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
     }
 
-    // ─── 400 — Validaciones del @Valid (campos obligatorios, etc) ───────────────
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidaciones(MethodArgumentNotValidException ex) {
-        log.warn(">> 400 - Validación fallida: {}", ex.getBindingResult().getFieldErrors()); // ← agrega
+        log.warn("400 validacion fallida", ex);
         Map<String, Object> errores = new HashMap<>();
         errores.put("timestamp", LocalDateTime.now());
         errores.put("status", HttpStatus.BAD_REQUEST.value());
-        errores.put("error", "Error de validación");
+        errores.put("error", "Error de validacion");
 
         Map<String, String> campos = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -47,15 +45,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errores);
     }
 
-    // ─── 500 — Cualquier error inesperado ───────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenerico(Exception ex) {
-        log.error(">> 500 - Error inesperado: {}", ex.getMessage(), ex);
+        log.error("500 error inesperado", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Error interno del servidor. Contacte al administrador.");
     }
 
-    // ─── Metodo auxiliar para construir la respuesta ────────────────────────────
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String mensaje) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());

@@ -1,10 +1,8 @@
 package com.ordenaris.riesgocrediticio.domain.port.out;
 
-import com.ordenaris.riesgocrediticio.infrastructure.adapter.out.persistence.VerificacionLegal;
+import com.ordenaris.riesgocrediticio.domain.model.VerificacionLegalEvaluacion;
 
 public interface VerificacionLegalProvider {
-    /**
-     * Obtiene la existencia de procesos judiciales, demandas, embargos, etc.
-     */
-    VerificacionLegal obtenerVerificacionLegal(String empresaId);
+
+    VerificacionLegalEvaluacion obtenerVerificacionLegal(String empresaId);
 }
